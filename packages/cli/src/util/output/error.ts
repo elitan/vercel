@@ -5,12 +5,11 @@ import renderLink from './link';
 
 const metric = metrics();
 
-export default function error(
-  ...input: string[] | [Pick<APIError, 'slug' | 'message' | 'link' | 'action'>]
-) {
+export default function error(...input: string[] | [APIError]) {
   let messages = input;
-  if (typeof input[0] === 'object') {
-    const { slug, message, link, action = 'Learn More' } = input[0];
+  const first = input[0];
+  if (typeof first === 'object') {
+    const { slug, message, link, action = 'Learn More' } = first;
     messages = [message];
     const details = slug ? `https://err.sh/vercel/${slug}` : link;
     if (details) {

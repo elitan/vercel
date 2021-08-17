@@ -470,15 +470,12 @@ const main = async () => {
   }
 
   if (typeof argv['--token'] === 'string' && subcommand === 'switch') {
-    console.error(
-      error({
-        message: `This command doesn't work with ${param(
-          '--token'
-        )}. Please use ${param('--scope')}.`,
-        slug: 'no-token-allowed',
-      })
-    );
-
+    output.prettyError({
+      message: `This command doesn't work with ${param(
+        '--token'
+      )}. Please use ${param('--scope')}.`,
+      link: 'https://err.sh/vercel/no-token-allowed',
+    });
     return 1;
   }
 
@@ -486,30 +483,24 @@ const main = async () => {
     const token = argv['--token'];
 
     if (token.length === 0) {
-      console.error(
-        error({
-          message: `You defined ${param('--token')}, but it's missing a value`,
-          slug: 'missing-token-value',
-        })
-      );
-
+      output.prettyError({
+        message: `You defined ${param('--token')}, but it's missing a value.`,
+        link: 'https://err.sh/vercel/missing-token-value',
+      });
       return 1;
     }
 
     const invalid = token.match(/(\W)/g);
     if (invalid) {
       const notContain = Array.from(new Set(invalid)).sort();
-      console.error(
-        error({
-          message: `You defined ${param(
-            '--token'
-          )}, but its contents are invalid. Must not contain: ${notContain
-            .map(c => JSON.stringify(c))
-            .join(', ')}`,
-          slug: 'invalid-token-value',
-        })
-      );
-
+      output.prettyError({
+        message: `You defined ${param(
+          '--token'
+        )}, but its contents are invalid. Must not contain: ${notContain
+          .map(c => JSON.stringify(c))
+          .join(', ')}`,
+        link: 'https://err.sh/vercel/invalid-token-value',
+      });
       return 1;
     }
 
@@ -549,12 +540,10 @@ const main = async () => {
       user = await getUser(client);
     } catch (err) {
       if (err.code === 'NOT_AUTHORIZED') {
-        console.error(
-          error({
-            message: `You do not have access to the specified account`,
-            slug: 'scope-not-accessible',
-          })
-        );
+        output.prettyError({
+          message: `You do not have access to the specified account`,
+          link: 'https://err.sh/vercel/scope-not-accessible',
+        });
 
         return 1;
       }
@@ -573,17 +562,14 @@ const main = async () => {
         list = (await teams.ls()).teams;
       } catch (err) {
         if (err.code === 'not_authorized') {
-          console.error(
-            error({
-              message: `You do not have access to the specified team`,
-              slug: 'scope-not-accessible',
-            })
-          );
-
+          output.prettyError({
+            message: `You do not have access to the specified team`,
+            link: 'https://err.sh/vercel/scope-not-accessible',
+          });
           return 1;
         }
 
-        console.error(error('Not able to load teams'));
+        output.error('Not able to load teams');
         return 1;
       }
 
@@ -591,12 +577,10 @@ const main = async () => {
         list && list.find(item => item.id === scope || item.slug === scope);
 
       if (!related) {
-        console.error(
-          error({
-            message: 'The specified scope does not exist',
-            slug: 'scope-not-existent',
-          })
-        );
+        output.prettyError({
+          message: 'The specified scope does not exist',
+          link: 'https://err.sh/vercel/scope-not-existent',
+        });
 
         return 1;
       }
@@ -617,8 +601,8 @@ const main = async () => {
 
   try {
     const start = Date.now();
-    const full = require(`./commands/${targetCommand}`).default;
-    exitCode = await full(client);
+    const full = await import(`./commands/${targetCommand}`);
+    exitCode = await full.default(client);
     const end = Date.now() - start;
 
     if (shouldCollectMetrics) {
